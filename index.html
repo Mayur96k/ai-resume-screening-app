@@ -4,6 +4,7 @@
 <title>SUEZ AI HR Talent Platform</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="config.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
@@ -389,10 +390,12 @@ ALTER TABLE hr_results DISABLE ROW LEVEL SECURITY;</div>
 
 <script>
 // ════════════════════════════════════════════════════════════════════
-//  SUPABASE CONFIG — hardcoded so it works on ALL devices/incognito
+//  CONFIG — loaded from config.js (not committed). See config.example.js
 // ════════════════════════════════════════════════════════════════════
-const HARDCODED_SB_URL = 'https://tytyyxdqtxnscevwetvy.supabase.co';  // ← your URL
-const HARDCODED_SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR5dHl5eGRxdHhuc2NldndldHZ5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMzODUxODAsImV4cCI6MjA4ODk2MTE4MH0.YUZEtVhQa3I8cHbT2E1U7ra7TM_fDwjb5yHKkjGDPrE';                          // ← your anon key
+const APP_CONFIG       = window.APP_CONFIG || {};
+const HARDCODED_SB_URL = APP_CONFIG.SUPABASE_URL      || '';
+const HARDCODED_SB_KEY = APP_CONFIG.SUPABASE_ANON_KEY || '';
+const WEBHOOK_URL      = APP_CONFIG.N8N_WEBHOOK_URL   || '';
 
 const SB_CONFIG_KEY = 'suez_sb_config';
 
@@ -692,6 +695,8 @@ document.getElementById('submitBtn').addEventListener('click', async () => {
   setAnalyzing(true);
   updateProgress(20, 'Uploading resumes...');
 
+  if (!WEBHOOK_URL) { alert('N8N_WEBHOOK_URL is not set in config.js'); clearInterval(timerInterval); setAnalyzing(false); return; }
+
   const formData = new FormData();
   formData.append('job_description', jd);
   for (let i = 0; i < resumes.length; i++) formData.append('resume', resumes[i]);
@@ -701,7 +706,7 @@ document.getElementById('submitBtn').addEventListener('click', async () => {
   let data;
   try {
     const response = await fetch(
-      'https://45.151.155.209.nip.io/webhook/9fdb5c11-569d-4f29-acd2-db49248a700c',
+      WEBHOOK_URL,
       { method:'POST', body:formData, signal: abortController.signal }
     );
     data = await response.json();
